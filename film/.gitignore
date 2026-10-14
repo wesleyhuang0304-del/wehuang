@@ -1,0 +1,7 @@
+__pycache__/
+assets/*_2x.png
+assets/*_depth.png
+assets/*.pb
+frames/
+out/*.mp4
+music/*.wav
