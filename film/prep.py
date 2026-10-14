@@ -2,7 +2,7 @@
 import os, sys, shutil, glob
 import numpy as np, cv2
 
-SRC = '/opt/cursor/artifacts/assets'
+SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'plates')
 DST = '/workspace/film/assets'
 NAMES = ['plate_ch1_humans', 'plate_ch2_elves', 'plate_ch3_kingdom', 'plate_ch4_dwarves',
          'plate_ch5_isle', 'plate_ch6_desert', 'map_parchment', 'parchment_blank']

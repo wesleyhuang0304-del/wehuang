@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 ASSETS = f'{ROOT}/assets'
-GEN = '/opt/cursor/artifacts/assets'
+GEN = f'{ROOT}/assets/plates'
 FONTS = f'{ROOT}/fonts'
 W, H, FPS = 1920, 1080, 24
 DURATION = 40.0
@@ -71,8 +71,8 @@ def load_depth(name, shape):
     d = cv2.imread(p, -1).astype(np.float32) / 65535.0
     d = cv2.resize(d, (shape[1], shape[0]))
     # dilate near layers so foreground silhouettes move as solid bodies
-    d = cv2.dilate(d, np.ones((9, 9), np.uint8))
-    d = cv2.GaussianBlur(d, (0, 0), 4)
+    d = cv2.dilate(d, np.ones((7, 7), np.uint8))
+    d = cv2.GaussianBlur(d, (0, 0), 6)
     return d
 
 
@@ -366,37 +366,37 @@ CHAPTERS = [
     dict(key='ch1', plate='plate_ch1_humans', t0=3.6, t1=10.4, grade='amber', parts='dust', npart=260,
          subject=(0.39, 0.40),
          cam0=dict(cx=0.42, cy=0.53, z=1.12, dolly=0.0, px=0, py=0),
-         cam1=dict(cx=0.40, cy=0.47, z=1.30, dolly=0.22, px=-14, py=-8),
+         cam1=dict(cx=0.40, cy=0.47, z=1.30, dolly=0.15, px=-10, py=-6),
          num='I', title='Terra Hominum', sub='Ubi homines agros colunt', pos=(0.70, 0.33),
          ambient=dict(wheat=True, clouds=0.020)),
     dict(key='ch2', plate='plate_ch2_elves', t0=9.6, t1=15.6, grade='emerald', parts='motes', npart=140,
          subject=(0.58, 0.55),
-         cam0=dict(cx=0.52, cy=0.60, z=1.20, dolly=0.0, px=0, py=10),
-         cam1=dict(cx=0.55, cy=0.45, z=1.26, dolly=0.08, px=0, py=-34),
+         cam0=dict(cx=0.52, cy=0.60, z=1.20, dolly=0.0, px=0, py=8),
+         cam1=dict(cx=0.55, cy=0.45, z=1.26, dolly=0.05, px=0, py=-22),
          num='II', title='Silva Aeterna', sub='Ubi primogeniti sub arbore vivunt', pos=(0.30, 0.70),
          ambient=dict(water=(0.62, 1.0), clouds=0.0)),
     dict(key='ch3', plate='plate_ch3_kingdom', t0=14.8, t1=20.6, grade='mist', parts='wisps', npart=70,
          subject=(0.44, 0.52),
-         cam0=dict(cx=0.41, cy=0.56, z=1.22, dolly=0.0, px=-30, py=0),
-         cam1=dict(cx=0.55, cy=0.54, z=1.24, dolly=0.04, px=34, py=0),
+         cam0=dict(cx=0.41, cy=0.56, z=1.22, dolly=0.0, px=-22, py=0),
+         cam1=dict(cx=0.55, cy=0.54, z=1.24, dolly=0.03, px=24, py=0),
          num='III', title='Regnum Altum', sub='Tres viatores, una via', pos=(0.68, 0.30),
          ambient=dict(clouds=0.025, haze=0.10)),
     dict(key='ch4', plate='plate_ch4_dwarves', t0=19.8, t1=26.4, grade='ice', parts='snow', npart=900,
          subject=(0.70, 0.36),
          cam0=dict(cx=0.60, cy=0.52, z=1.06, dolly=0.0, px=0, py=0),
-         cam1=dict(cx=0.655, cy=0.50, z=1.22, dolly=0.12, px=-10, py=-6),
+         cam1=dict(cx=0.655, cy=0.50, z=1.22, dolly=0.08, px=-7, py=-4),
          num='IV', title='Sub Montibus', sub='Ubi nani in saxo regnant', pos=(0.29, 0.30),
          ambient=dict(water=(0.80, 1.0), clouds=0.012)),
     dict(key='ch5', plate='plate_ch5_isle', t0=25.6, t1=32.2, grade='violet', parts='magic', npart=220,
          subject=(0.54, 0.45),
-         cam0=dict(cx=0.46, cy=0.50, z=1.16, dolly=0.0, px=44, py=0),
-         cam1=dict(cx=0.54, cy=0.46, z=1.27, dolly=0.06, px=-44, py=-10),
+         cam0=dict(cx=0.47, cy=0.50, z=1.16, dolly=0.0, px=20, py=0),
+         cam1=dict(cx=0.53, cy=0.46, z=1.27, dolly=0.04, px=-20, py=-6),
          num='V', title='Insula Caelestis', sub='Magia antiqua aerem tenet', pos=(0.50, 0.70),
          ambient=dict(water=(0.64, 0.92), clouds=0.02, mist=True)),
     dict(key='ch6', plate='plate_ch6_desert', t0=31.4, t1=37.6, grade='crimson', parts='sand', npart=320,
          subject=(0.52, 0.42),
-         cam0=dict(cx=0.46, cy=0.56, z=1.42, dolly=0.16, px=0, py=0),
-         cam1=dict(cx=0.50, cy=0.51, z=1.14, dolly=0.0, px=16, py=0),
+         cam0=dict(cx=0.46, cy=0.56, z=1.42, dolly=0.11, px=0, py=0),
+         cam1=dict(cx=0.50, cy=0.51, z=1.14, dolly=0.0, px=11, py=0),
          num='VI', title='Finis Itineris', sub='Post arenas, aqua vitae', pos=(0.72, 0.30),
          ambient=dict(heat=(0.30, 0.52), clouds=0.015)),
 ]
@@ -484,6 +484,17 @@ class Film:
         self.n_fine = cv2.resize(fractal_noise(960, 540, 6, octaves=4, base=24), (W, H), interpolation=cv2.INTER_CUBIC)
         self.n_ink = cv2.resize(fractal_noise(480, 270, 7, octaves=6, base=4, persistence=0.62), (W, H),
                                 interpolation=cv2.INTER_CUBIC)
+        # ink spreads outward from a few drops, with a ragged, fibrous front
+        seeds = [(0.36, 0.46, 1.0), (0.70, 0.62, 0.85), (0.58, 0.28, 0.7)]
+        asp = W / H
+        dist = np.full((H, W), 9.0, np.float32)
+        for sx_, sy_, wgt in seeds:
+            d = np.sqrt(((self.uu / W - sx_) * asp) ** 2 + (self.vv / H - sy_) ** 2) / wgt
+            dist = np.minimum(dist, d)
+        dist = dist / dist.max()
+        n = dist * 0.72 + (self.n_ink - 0.5) * 0.30
+        self.n_ink_field = ((n - n.min()) / (n.max() - n.min())).astype(np.float32)
+        self.n_hf = cv2.resize(fractal_noise(1920, 1080, 12, octaves=3, base=90, persistence=0.7), (W, H))
         self.n_mist = fractal_noise(1280, 360, 8, octaves=5, base=5)
         self.n_amb = fractal_noise(640, 360, 9, octaves=4, base=6)
         yy = self.vv / H
@@ -497,6 +508,10 @@ class Film:
         PH, PW = plate.shape[:2]
         u = ease((t - ch['t0']) / (ch['t1'] - ch['t0']))
         c = {k: lerp(ch['cam0'][k], ch['cam1'][k], u) for k in ch['cam0']}
+        hw = 0.5 / c['z'] + 0.025
+        hh = 0.5 * (H - 2 * BAR) / H / c['z'] + 0.025
+        c['cx'] = min(max(c['cx'], hw), 1 - hw)
+        c['cy'] = min(max(c['cy'], hh), 1 - hh)
         k = PW / W / c['z']
         # gate weave
         wx = 0.35 * math.sin(t * 7.3) + 0.25 * math.sin(t * 13.1)
@@ -509,9 +524,10 @@ class Film:
         for _ in range(2):
             D = cv2.remap(depth, sx, sy, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
             dd = D - Df
-            sc = 1.0 / (1.0 + c['dolly'] * dd * 2.2)
-            sx = ccx + (bx - ccx) * sc - c['px'] * k * dd * 2.0
-            sy = ccy + (by - ccy) * sc - c['py'] * k * dd * 2.0
+            sc = 1.0 / (1.0 + c['dolly'] * np.maximum(dd, -0.04) * 2.2)
+            dp = np.maximum(dd, -0.25)
+            sx = ccx + (bx - ccx) * sc - c['px'] * k * dp * 2.0
+            sy = ccy + (by - ccy) * sc - c['py'] * k * dp * 2.0
         amb = ch['ambient']
         far = clamp01(1 - D / 0.10)
         if amb.get('clouds'):
@@ -519,17 +535,19 @@ class Film:
             sx = sx - amb['clouds'] * PW * (t - ch['t0']) * sky / 6.0
         if amb.get('wheat'):
             ny = sy / PH
-            m = smoothstep(0.55, 0.75, ny) * clamp01(D * 1.4)
-            sway = np.sin(sx * 0.018 + sy * 0.006 - t * 2.4) + 0.5 * np.sin(sx * 0.043 - t * 3.7 + sy * 0.01)
-            sx = sx + m * sway * 2.6
-            sy = sy + m * np.sin(sx * 0.02 - t * 2.0) * 0.8
+            m = smoothstep(0.52, 0.72, ny) * clamp01(D * 1.6)
+            gust = 0.6 + 0.4 * np.sin(sx * 0.004 - t * 0.9)
+            sway = np.sin(sx * 0.016 + sy * 0.005 - t * 2.2) + 0.45 * np.sin(sx * 0.041 - t * 3.5 + sy * 0.012)
+            sx = sx + m * sway * gust * 6.5
+            sy = sy + m * np.sin(sx * 0.02 - t * 2.0) * 1.6
         if amb.get('water'):
             y0, y1 = amb['water']
             ny = sy / PH
             wm = smoothstep(y0, y0 + 0.03, ny) * (1 - smoothstep(y1 - 0.03, y1, ny))
-            sh = np.sin(sy * 0.35 + t * 3.1 + np.sin(sx * 0.02 + t) * 2.0) * 1.6
+            sh = np.sin(sy * 0.30 + t * 2.6 + np.sin(sx * 0.018 + t * 0.8) * 2.5) * 3.6
             sx = sx + wm * sh
-            sy = sy + wm * np.sin(sx * 0.05 + t * 2.3) * 0.6
+            sy = sy + wm * np.sin(sx * 0.045 + t * 2.1) * 1.4
+            water_mask = wm
         if amb.get('heat'):
             y0, y1 = amb['heat']
             ny = sy / PH
@@ -538,6 +556,13 @@ class Film:
             sy = sy + hm * np.sin(sx * 0.05 + t * 5.0) * 0.9
         img = cv2.remap(plate, sx, sy, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT)
         img = clamp01(img)
+        if amb.get('water'):
+            sp = np.roll(self.n_fine, int(t * 37) % W, axis=1)
+            sp2 = np.roll(self.n_fine[::-1], -int(t * 23) % W, axis=1)
+            lum = img @ np.array([0.299, 0.587, 0.114], np.float32)
+            gl = clamp01((sp * sp2 - 0.40) * 10) * water_mask * clamp01(lum * 1.6 - 0.45)
+            gl = cv2.GaussianBlur(gl, (0, 0), 1.0)
+            img = img + gl[..., None] * np.array([1.0, 0.97, 0.88], np.float32) * 0.6
         if amb.get('mist'):
             off = (t * 38.0) % self.n_mist.shape[1]
             m = np.roll(self.n_mist, -int(off), axis=1)
@@ -662,14 +687,11 @@ class Film:
             lay = splat(lay, x, y, s * 1.2, b * near * 1.6, col)
             return clamp01(out + cv2.resize(lay, (W, H)))
         if kind == 'ink':
-            T = lerp(-0.15, 1.15, ease(p))
-            warp = (self.n_amb - 0.5)
-            warp = cv2.resize(warp, (W, H))
-            n = self.n_ink * 0.8 + warp * 0.25 + np.abs(self.uu / W - 0.5) * 0.15
-            n = (n - n.min()) / (n.max() - n.min())
+            T = lerp(-0.02, 1.08, ease(p))
+            n = self.n_ink_field
             e = n - T
             ink = np.array([0.07, 0.045, 0.03], np.float32)
-            e = e + (self.n_fine - 0.5) * 0.03
+            e = e + (self.n_fine - 0.5) * 0.08 + (self.n_hf - 0.5) * 0.06
             inkA = smoothstep(0.0, 0.025, e)  # 1 = A visible
             showB = smoothstep(0.03, 0.09, -e)  # 1 = B visible
             mid = ink * np.ones_like(A)
@@ -734,7 +756,7 @@ class Film:
             ba = sample(A, Pp)
             lum = ba @ np.array([0.3, 0.59, 0.11], np.float32)
             lum = cv2.GaussianBlur(lum, (0, 0), 2.5)
-            b = bp * (0.42 + 0.58 * lum[..., None]) * np.array([0.92, 0.86, 0.74], np.float32)
+            b = bp * (0.93 + 0.07 * lum[..., None]) * np.array([0.92, 0.86, 0.74], np.float32)
             return b * shade[..., None]
         shade2 = (0.45 + 0.55 * np.sin(th2) ** 0.7).astype(np.float32)
         bc = backside(p2, shade2)
