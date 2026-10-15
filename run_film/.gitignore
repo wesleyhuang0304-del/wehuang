@@ -1,0 +1,6 @@
+__pycache__/
+assets/*_2x.png
+out/
+music/*.wav
+fonts/*.woff2
+fonts/s.zip
