@@ -4,3 +4,6 @@ out/
 music/*.wav
 fonts/*.woff2
 fonts/s.zip
+assets/EDSR_x2.pb
+assets/*.pb
+music/*.mid
