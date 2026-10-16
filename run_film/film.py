@@ -149,10 +149,10 @@ def s04(c):
 # ================================================================== 8-20 s  heritage (sepia)
 @shot(8.0, 'plate_xiangya_redbuilding_cross', plate='s08_redbuilding')
 def s05(c):
-    runs = [Run(B(1.76, kit=0, acc=0), x=1.0, z=3.6, heading=-PI / 2, phase=0.1),
-            Run(B(1.68, f=True, kit=1, acc=3), x=2.5, z=4.6, heading=-PI / 2, phase=0.55)]
+    runs = [Run(B(1.76, kit=0, acc=0), x=1.1, z=4.2, heading=-PI / 2, phase=0.1),
+            Run(B(1.68, f=True, kit=1, acc=3), x=1.9, z=5.0, heading=-PI / 2, phase=0.55)]
     lg = light((1.0, 0.5, 0.4), (1.0, 0.74, 0.45), (0.3, 0.32, 0.38), (0.25, 0.18, 0.12), rim=1.2)
-    return plate_shot(c, 's08_redbuilding', 0.45, 1.9, runs, lg, z=(1.12, 1.04), cy=0.55, sh_k=0.0, slow=0.55,
+    return plate_shot(c, 's08_redbuilding', 0.45, 2.7, runs, lg, z=(1.12, 1.04), cy=0.55, sh_k=0.35, slow=0.2,
                       sun=(0.95, 0.2), flare_k=0.3, fx=[('dust', GOLD, 60)])
 
 
@@ -414,14 +414,14 @@ def s19(c):
 @shot(34.0, 'cg_overhead_asphalt_pack', whip=(0, -1))
 def s20(c):
     rng = np.random.default_rng(20)
-    runs = [Run(B(1.65 + 0.2 * rng.random(), f=k % 2 == 1, skin=k % 3, kit=k % 2, acc=(1, 0, 3, 0, 1)[k]),
-                x=-1.5 + 0.75 * k, z=1.2 + 1.5 * (k % 3) + rng.normal(0, 0.3), heading=0, phase=rng.random(),
-                freq=1.6) for k in range(5)]
+    runs = [Run(B(1.65 + 0.2 * rng.random(), f=k % 2 == 1, skin=k % 3, kit=k % 2, acc=(1, 0, 3, 0, 1, 2, 0)[k]),
+                x=-1.8 + 0.62 * k + rng.normal(0, 0.12), z=-0.6 + 1.25 * ((k * 3) % 5) + rng.normal(0, 0.25),
+                heading=rng.normal(0, 0.03), phase=rng.random(), freq=1.58 + 0.06 * rng.random()) for k in range(7)]
     tw = c.lt
     v = RN.speed(runs[0].body, 1.6)
 
     def cam(tw_):
-        zc = 0.75 * v * tw_ + 2.6
+        zc = v * tw_ + 2.4
         return WD.Cam((0.2, 7.5, zc), (0.2, 0.0, zc + 0.001), 52, up=(0, 0, 1))
     lg = light((-1.0, 0.7, 0.35), (1.4, 0.8, 0.5), (0.3, 0.25, 0.3), (0.2, 0.1, 0.08), rim=0.8)
     L = people(runs, cam, tw, 1.0, lg, res=0.75, mb=2)
@@ -429,7 +429,7 @@ def s20(c):
     env = dict(sky=dict(top=(0.3, 0.3, 0.4), hor=(0.6, 0.5, 0.5)), ground='asphalt',
                gargs=dict(tone=(0.1, 0.095, 0.1), lanes=[(-2.4, 0.07, 'solid'), (2.8, 0.07, 'solid')],
                           center_line=(0.2, 0.09, (0.15, 0.35, 0.95))),
-               decals=[(dm, (-1.1, 7.0, 1.5, 8.0), (0.9, 0.88, 0.85))], light=lg)
+               decals=[(dm, (-1.1, 4.4, 1.5, 5.4), (0.9, 0.88, 0.85))], light=lg)
     return dict(bg=cg_bg(L.cam, env, L), L=L)
 
 
@@ -558,11 +558,11 @@ def s27(c):
 # ================================================================== 44-54 s  chase the light (gold)
 @shot(44.0, 'cg_giant_sun_disc_silhouette_cross')
 def s28(c):
-    run = Run(B(1.78, kit=0, acc=0), x=0, z=-1.5, heading=0, phase=0.2)
+    run = Run(B(1.78, kit=0, acc=0), x=0, z=-1.75, heading=0, phase=0.2)
     sd = (1.0, 0.024, 0.0)
     cam = WD.Cam((-32.0, 0.9, 0.0), (0.0, 1.05, 0.0), 9.0)
     lg = light(sd, (1.6, 0.9, 0.45), (0.12, 0.07, 0.05), (0.05, 0.03, 0.02), rim=2.8, rim_col=(1.0, 0.65, 0.3))
-    L = people([run], static_cam(cam), c.lt * 0.45, 0.45, lg, res=0.75, mb=2, ground=False)
+    L = people([run], static_cam(cam), c.lt * 0.3, 0.3, lg, res=0.75, mb=2, ground=False)
     env = dict(sky=dict(top=(0.3, 0.1, 0.05), hor=(0.8, 0.33, 0.12), sun_dir=sd, sun_col=(1.0, 0.55, 0.22),
                         sun_size=0.027, glow=0.08, halo=0.3,
                         skyline=[dict(kind='mountain', col=(0.32, 0.12, 0.06), h=0.012, seed=6, base=0.0)]),
@@ -670,7 +670,7 @@ def s31(c):
 
 @shot(52.0, 'cg_finish_line_feet_high_angle_slowmo', whip=(-1, 0))
 def s32(c):
-    run = Run(B(1.74, kit=1, acc=0), x=0.0, z=-1.5, heading=0, phase=0.6)
+    run = Run(B(1.74, kit=1, acc=0), x=0.0, z=-1.85, heading=0, phase=0.6)
     slow = 0.3
     cam = WD.Cam((0.35, 3.3, 3.4), (0.0, 0.25, -0.2), 36)
     lg = light((-0.5, 0.45, -0.8), (1.5, 1.05, 0.6), (0.45, 0.4, 0.38), (0.35, 0.15, 0.1), rim=1.4)
