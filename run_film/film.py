@@ -522,10 +522,10 @@ def s25(c):
 @shot(40.0, 'cg_slowmo_female_frontal_backlit', whip=(0, -1))
 def s26(c):
     run = Run(B(1.67, f=True, skin=2, kit=1, acc=2), heading=0, phase=0.15, freq=1.5)
-    slow = 0.35
+    slow = 0.6
     tw = c.lt * slow
     lg = light((0.15, 0.3, -1.0), (1.5, 1.0, 0.55), (0.42, 0.34, 0.3), (0.3, 0.18, 0.1), rim=2.6)
-    cam = track_cam(run, lambda tw_: np.array([lerp(0.6, 0.2, c.u), 0.42, 3.4]), (0, 0.4, 0), fov=30)
+    cam = track_cam(run, lambda tw_: np.array([lerp(0.7, 0.25, c.u), 0.25, lerp(4.6, 4.0, c.u)]), (0, 0.12, 0), fov=32)
     L = people([run], cam, tw, slow, lg, res=1.0, mb=2)
     env = dict(sky=dict(top=(0.28, 0.3, 0.45), hor=(1.0, 0.68, 0.38), sun_dir=(0.15, 0.22, -1.0),
                         sun_col=(1.0, 0.72, 0.4), sun_size=0.03, glow=1.0,
@@ -540,8 +540,8 @@ def s26(c):
 def s27(c):
     run = Run(B(1.8, kit=0, acc=1), heading=0, phase=0.35)
     tw = c.lt * 0.8
-    lg = light((0.35, 1.0, 0.25), (1.3, 1.0, 0.75), (0.06, 0.04, 0.04), (0.02, 0, 0), rim=2.6,
-               rim_col=(1.0, 0.3, 0.25))
+    lg = light((0.35, 1.0, 0.25), (1.4, 1.05, 0.7), (0.05, 0.1, 0.12), (0.01, 0.03, 0.04), rim=2.6,
+               rim_col=(0.35, 0.85, 1.0))
 
     def off(tw_):
         a = R(lerp(35, 150, ease('io', c.u)))
@@ -549,10 +549,10 @@ def s27(c):
     cam = track_cam(run, off, (0, 0.12, 0), fov=40)
     L = people([run], cam, tw, 0.8, lg, res=0.75, mb=2, mirror=True)
     p = run.pelvis(tw)
-    env = dict(sky=dict(top=(0, 0, 0), hor=(0.03, 0.01, 0.01)), ground='mirror', gargs=dict(tone=(0.01, 0.008, 0.008)),
-               light=lg, spec=0.15, mirror_k=0.5, mirror_blur=3, grid=(1.0, 0.01, (0.9, 0.2, 0.15)),
-               pool=(p[0], p[2], 2.2, (0.3, 0.22, 0.16)), fog=(14, (0.0, 0.0, 0.0)))
-    return dict(bg=cg_bg(L.cam, env, L), L=L)
+    env = dict(sky=dict(top=(0.0, 0.03, 0.05), hor=(0.04, 0.16, 0.2)), ground='mirror',
+               gargs=dict(tone=(0.012, 0.03, 0.035)), light=lg, spec=0.25, mirror_k=0.6, mirror_blur=5,
+               pool=(p[0], p[2], 1.8, (0.5, 0.36, 0.18)), fog=(12, (0.02, 0.1, 0.13)))
+    return dict(bg=cg_bg(L.cam, env, L), L=L, fx=[('sparks', GOLD, 70)])
 
 
 # ================================================================== 44-54 s  chase the light (gold)
