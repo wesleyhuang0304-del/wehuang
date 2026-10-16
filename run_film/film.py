@@ -92,7 +92,7 @@ def s02(c):
             Run(B(1.8, kit=1, acc=2), x=-0.75, z=16.0, heading=PI, phase=0.72)]
     lg = light((-0.2, 0.7, 1.0), (0.42, 0.6, 0.95), (0.05, 0.07, 0.12), (0.03, 0.035, 0.05), rim=1.9,
                rim_col=(0.55, 0.75, 1.1))
-    return plate_shot(c, 'n01_night_street', 0.485, 0.4, runs, lg, z=(1.0, 1.08), sh_k=0.3, mirror=True,
+    return plate_shot(c, 'n01_night_street', 0.49, 1.2, runs, lg, z=(1.0, 1.08), sh_k=0.3, mirror=True,
                       refl_k=0.45)
 
 
@@ -140,10 +140,10 @@ def s03(c):
 
 @shot(6.0, 'plate_dufu_pavilion_away', plate='n12_pavilion_walk')
 def s04(c):
-    runs = [Run(B(1.75, kit=0, acc=3), x=-0.55, z=4.2, heading=0.16, phase=0.2),
-            Run(B(1.64, f=True, skin=2, kit=1, acc=1), x=0.15, z=5.1, heading=0.16, phase=0.65)]
+    runs = [Run(B(1.75, kit=0, acc=3), x=0.0, z=4.4, heading=0.09, phase=0.2),
+            Run(B(1.64, f=True, skin=2, kit=1, acc=1), x=0.73, z=5.3, heading=0.09, phase=0.65)]
     lg = light((0.7, 0.45, 0.4), (1.1, 0.72, 0.42), (0.12, 0.15, 0.26), (0.08, 0.07, 0.07), rim=1.8)
-    return plate_shot(c, 'n12_pavilion_walk', 0.46, 0.6, runs, lg, z=(1.08, 1.0), sh_k=0.35)
+    return plate_shot(c, 'n12_pavilion_walk', 0.46, 2.0, runs, lg, z=(1.22, 1.3), sh_k=0.45)
 
 
 # ================================================================== 8-20 s  heritage (sepia)
@@ -278,12 +278,14 @@ def s11(c):
 
 @shot(22.0, 'plate_xiang_river_road_pack', plate='n04_river_road', whip=(-1, 0))
 def s12(c):
-    runs = [Run(B(1.78, kit=0, acc=1), x=-0.9, z=10.0, heading=PI, phase=0.1),
-            Run(B(1.65, f=True, kit=1, acc=0), x=0.1, z=11.2, heading=PI, phase=0.45),
-            Run(B(1.82, skin=1, kit=0, acc=2), x=-1.6, z=12.8, heading=PI, phase=0.8),
-            Run(B(1.7, kit=1, acc=3), x=0.8, z=13.6, heading=PI, phase=0.3)]
+    # the road runs 0.2 rad left of the plate's optical axis; lane x0 at the camera plane, x = x0 - 0.2 z
+    hd = PI - 0.2
+    runs = [Run(B(1.78, kit=0, acc=1), x=-1.80, z=10.5, heading=hd, phase=0.1),
+            Run(B(1.65, f=True, kit=1, acc=0), x=-0.92, z=11.6, heading=hd, phase=0.45),
+            Run(B(1.82, skin=1, kit=0, acc=2), x=-3.16, z=12.8, heading=hd, phase=0.8),
+            Run(B(1.7, kit=1, acc=3), x=-1.96, z=13.8, heading=hd, phase=0.3)]
     lg = light((0.15, 0.12, 1.0), (1.3, 0.9, 0.52), (0.35, 0.3, 0.28), (0.25, 0.18, 0.12), rim=2.3)
-    return plate_shot(c, 'n04_river_road', 0.43, 0.5, runs, lg, z=(1.0, 1.06), sh_k=0.6,
+    return plate_shot(c, 'n04_river_road', 0.43, 2.4, runs, lg, z=(1.0, 1.06), sh_k=0.6,
                       sun=(0.62, 0.41), flare_k=0.35)
 
 
@@ -377,7 +379,7 @@ def s17(c):
             Run(B(1.66, f=True, kit=1, acc=0), x=0.7, z=7.4, heading=PI, phase=0.6, freq=1.6),
             Run(B(1.84, skin=1, kit=0, acc=0), x=0.0, z=9.0, heading=PI, phase=0.9, freq=1.6)]
     lg = light((0.0, 0.12, 1.0), (1.3, 0.75, 0.55), (0.4, 0.3, 0.35), (0.25, 0.18, 0.15), rim=2.2)
-    return plate_shot(c, 'n06_overpass', 0.49, 0.5, runs, lg, z=(1.05, 1.15), sh_k=0.6, ease_k='expo',
+    return plate_shot(c, 'n06_overpass', 0.48, 1.2, runs, lg, z=(1.05, 1.15), sh_k=0.6, ease_k='expo',
                       sun=(0.5, 0.48), flare_k=0.3)
 
 
@@ -395,17 +397,18 @@ def s18(c):
     return dict(bg=cg_bg(L.cam, env, L), L=L)
 
 
-@shot(33.0, 'plate_race_boulevard_six', plate='n09_boulevard', whip=(1, 0))
+@shot(33.0, 'plate_race_boulevard_pack_into_sun', plate='n09_boulevard', whip=(1, 0))
 def s19(c):
     rng = np.random.default_rng(19)
     runs = []
     for k in range(6):
         runs.append(Run(B(1.62 + 0.22 * rng.random(), f=k % 3 == 1, skin=k % 3, kit=k % 2, acc=k % 4),
-                        x=-1.5 + 0.6 * k + rng.normal(0, 0.15), z=7.0 + (k * 1.7) % 4.5, heading=PI,
+                        x=-1.4 + 0.55 * k + rng.normal(0, 0.12), z=2.6 + (k * 1.3) % 3.2, heading=0.03,
                         phase=rng.random(), freq=1.55 + 0.1 * rng.random()))
-    lg = light((0.25, 0.25, 1.0), (1.3, 0.85, 0.5), (0.35, 0.3, 0.3), (0.3, 0.15, 0.1), rim=2.0)
-    return plate_shot(c, 'n09_boulevard', 0.5, 0.5, runs, lg, z=(1.0, 1.12), sh_k=0.6, ease_k='expo',
-                      sun=(0.55, 0.43), flare_k=0.3)
+    lg = light((0.1, 0.12, 1.0), (1.5, 0.95, 0.5), (0.2, 0.17, 0.17), (0.25, 0.13, 0.08), rim=2.8,
+               rim_col=(1.0, 0.7, 0.4))
+    return plate_shot(c, 'n09_boulevard', 0.5, 0.5, runs, lg, z=(1.12, 1.0), sh_k=0.6, ease_k='expo',
+                      sun=(0.55, 0.43), flare_k=0.4)
 
 
 @shot(34.0, 'cg_overhead_asphalt_pack', whip=(0, -1))
@@ -430,13 +433,13 @@ def s20(c):
     return dict(bg=cg_bg(L.cam, env, L), L=L)
 
 
-@shot(35.0, 'plate_tunnel_exit_silhouettes', plate='n08_tunnel', whip=(1, 0))
+@shot(35.0, 'plate_tunnel_silhouettes_emerging', plate='n08_tunnel', whip=(1, 0))
 def s21(c):
-    runs = [Run(B(1.78, kit=0, acc=0), x=-0.4, z=2.4, heading=0, phase=0.1, freq=1.6),
-            Run(B(1.66, f=True, kit=1, acc=0), x=0.5, z=3.4, heading=0, phase=0.6, freq=1.6)]
+    runs = [Run(B(1.78, kit=0, acc=0), x=-0.55, z=8.6, heading=PI, phase=0.1, freq=1.6),
+            Run(B(1.66, f=True, kit=1, acc=0), x=0.6, z=9.8, heading=PI, phase=0.6, freq=1.6)]
     lg = light((0.0, 0.08, 1.0), (1.6, 1.2, 0.7), (0.06, 0.08, 0.12), (0.05, 0.05, 0.07), rim=2.8,
                rim_col=(1.0, 0.8, 0.5))
-    return plate_shot(c, 'n08_tunnel', 0.49, 0.5, runs, lg, z=(1.0, 1.1), sh_k=0.6, ease_k='expo',
+    return plate_shot(c, 'n08_tunnel', 0.49, 1.5, runs, lg, z=(1.0, 1.1), sh_k=0.6, ease_k='expo',
                       sun=(0.5, 0.49), flare_k=0.5)
 
 
@@ -522,7 +525,7 @@ def s26(c):
     slow = 0.35
     tw = c.lt * slow
     lg = light((0.15, 0.3, -1.0), (1.5, 1.0, 0.55), (0.42, 0.34, 0.3), (0.3, 0.18, 0.1), rim=2.6)
-    cam = track_cam(run, lambda tw_: np.array([lerp(0.6, 0.2, c.u), 0.32, 3.1]), (0, 0.22, 0), fov=30)
+    cam = track_cam(run, lambda tw_: np.array([lerp(0.6, 0.2, c.u), 0.42, 3.4]), (0, 0.4, 0), fov=30)
     L = people([run], cam, tw, slow, lg, res=1.0, mb=2)
     env = dict(sky=dict(top=(0.28, 0.3, 0.45), hor=(1.0, 0.68, 0.38), sun_dir=(0.15, 0.22, -1.0),
                         sun_col=(1.0, 0.72, 0.4), sun_size=0.03, glow=1.0,
@@ -542,8 +545,8 @@ def s27(c):
 
     def off(tw_):
         a = R(lerp(35, 150, ease('io', c.u)))
-        return np.array([3.0 * math.sin(a), 0.2, 3.0 * math.cos(a)])
-    cam = track_cam(run, off, (0, -0.05, 0), fov=40)
+        return np.array([3.8 * math.sin(a), 0.25, 3.8 * math.cos(a)])
+    cam = track_cam(run, off, (0, 0.12, 0), fov=40)
     L = people([run], cam, tw, 0.8, lg, res=0.75, mb=2, mirror=True)
     p = run.pelvis(tw)
     env = dict(sky=dict(top=(0, 0, 0), hor=(0.03, 0.01, 0.01)), ground='mirror', gargs=dict(tone=(0.01, 0.008, 0.008)),
@@ -582,9 +585,9 @@ def s29(c):
 
 @shot(48.0, 'plate_stadium_track_final_straight', plate='n11_stadium_track', whip=(1, 0))
 def s30(c):
-    runs = [Run(B(1.78, kit=1, acc=1, stride=1.1), x=0.0, z=12.5, heading=PI, phase=0.3, freq=1.6)]
+    runs = [Run(B(1.78, kit=1, acc=1, stride=1.1), x=0.0, z=10.5, heading=PI, phase=0.3, freq=1.6)]
     lg = light((0.0, 0.3, 1.0), (1.4, 0.95, 0.55), (0.35, 0.3, 0.3), (0.35, 0.12, 0.08), rim=2.4)
-    return plate_shot(c, 'n11_stadium_track', 0.31, 0.4, runs, lg, z=(1.08, 1.25), sh_k=0.6, res=1.0, slow=0.6,
+    return plate_shot(c, 'n11_stadium_track', 0.322, 2.1, runs, lg, z=(1.08, 1.25), sh_k=0.6, res=1.0, slow=0.6,
                       sun=(0.6, 0.31), flare_k=0.4)
 
 
@@ -784,7 +787,7 @@ for t0_, word, fnt, sz, x_, y_, rot_, beh in [
     slam(t0_, t0_ + 0.96, word, x_, y_, sz, font=fnt, rot=rot_, behind=beh)
 line(40.3, 41.95, '湘雅追光乐跑团', 540, 300, 104, bar=XY_RED, track=8)
 en(40.6, 41.95, 'XIANGYA · CHASE THE LIGHT RUNNING CLUB', 540, 420, 32, color=GOLD, track=(3, 8))
-slam(42.0, 43.74, '全力以赴', 540, 360, 230, rot=-3)
+slam(42.0, 43.74, '全力以赴', 540, 255, 195, rot=-3)
 # chase
 slam(44.0, 45.95, '追光', 540, 1580, 360, rot=-3)
 en(44.3, 45.95, 'CHASE THE LIGHT', 545, 1800, 58, track=(2, 22))
@@ -792,8 +795,8 @@ line(46.2, 47.95, '贺龙体育场', 540, 300, 96, bar=XY_RED)
 en(46.5, 47.95, 'HELONG STADIUM · FINISH', 540, 420, 38, color=GOLD)
 num(48.0, 49.95, 540, 1600, 230, count=(40.0, 42.195, 48.0, 49.6, '{:.3f}'), stroke=ORANGE)
 en(48.3, 49.95, 'KM  TO  THE  LIGHT', 545, 1770, 46, color=GOLD, track=(6, 14))
-line(50.4, 53.95, '致敬每一位', 540, 250, 92, weight=900)
-slam(51.2, 53.95, '追光者', 540, 440, 260, rot=-3)
+line(50.35, 51.97, '致敬每一位', 540, 1540, 88, weight=900)
+slam(50.75, 51.97, '追光者', 540, 1735, 230, rot=-3)
 # end card
 vert(54.6, 60.0, '我们追光', 130, 260, 96, color=WHITE)
 vert(55.0, 60.0, '也成为光', 950, 260, 96, color=GOLD)
