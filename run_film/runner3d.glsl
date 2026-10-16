@@ -68,14 +68,22 @@ vec2 limbArm(vec3 p, vec3 sh, vec3 el, vec3 wr, vec3 side, float s) {
     vec3 fd = normalize(wr - el);
     vec3 fr = fd - dot(fd, ud) * ud;
     fr = length(fr) > 1e-3 ? normalize(fr) : side;
-    vec2 r = vec2(sdEllipsoid(p - sh - side * 0.02 * s - ud * 0.02 * s, vec3(0.062, 0.07, 0.062) * s), SKIN);
+    vec2 r = vec2(sdEllipsoid(p - sh - side * 0.012 * s - ud * 0.02 * s, vec3(0.056, 0.068, 0.06) * s), SKIN);
     r = SU(r, vec2(sdRoundCone(p, sh, el, 0.047 * s, 0.036 * s), SKIN), 0.03 * s);
     r = SU(r, vec2(sdRoundCone(p, sh + ud * 0.09 * s + fr * 0.016 * s, sh + ud * 0.23 * s + fr * 0.012 * s, 0.041 * s, 0.03 * s), SKIN), 0.035 * s);
     r = SU(r, vec2(sdRoundCone(p, sh + ud * 0.06 * s - fr * 0.018 * s, sh + ud * 0.24 * s - fr * 0.014 * s, 0.043 * s, 0.03 * s), SKIN), 0.035 * s);
     r = SU(r, vec2(sdRoundCone(p, el, wr, 0.038 * s, 0.025 * s), SKIN), 0.02 * s);
     r = SU(r, vec2(sdRoundCone(p, el + fd * 0.025 * s - fr * 0.006 * s, el + fd * 0.13 * s, 0.041 * s, 0.029 * s), SKIN), 0.03 * s);
-    r = SU(r, vec2(sdRoundCone(p, wr + fd * 0.012 * s, wr + fd * 0.07 * s, 0.027 * s, 0.035 * s), SKIN), 0.016 * s);
-    r = SU(r, vec2(sdRoundCone(p, wr + fd * 0.02 * s + fr * 0.022 * s, wr + fd * 0.05 * s + fr * 0.035 * s, 0.011 * s, 0.012 * s), SKIN), 0.01 * s);
+    // loose fist: palm flat against the swing plane, thumb on top
+    vec3 th = -ud - dot(-ud, fd) * fd;
+    th = length(th) > 1e-3 ? normalize(th) : fr;
+    vec3 tb = cross(fd, th);
+    vec3 hq = p - wr - fd * 0.048 * s;
+    vec3 hl = vec3(dot(hq, tb), dot(hq, th), dot(hq, fd));
+    float fist = sdEllipsoid(hl, vec3(0.024, 0.04, 0.046) * s);
+    fist = smin1(fist, sdEllipsoid(hl - vec3(0.006, -0.004, 0.034) * s, vec3(0.024, 0.037, 0.02) * s), 0.02 * s);
+    r = SU(r, vec2(fist, SKIN), 0.014 * s);
+    r = SU(r, vec2(sdRoundCone(p, wr + fd * 0.025 * s + th * 0.03 * s, wr + fd * 0.07 * s + th * 0.034 * s + tb * 0.012 * s, 0.012 * s, 0.01 * s), SKIN), 0.01 * s);
     return r;
 }
 
@@ -126,7 +134,8 @@ vec2 mapRunner(vec3 p, int i) {
     vec3 q = transpose(C) * (p - J1);
     vec2 r = vec2(sdEllipsoid(q - vec3(0.0, -0.16, 0.0) * s, vec3(0.148 - 0.012 * fem, 0.17, 0.108) * s), SINGLET);
     vec3 m = mix(J0, J1, 0.45);
-    r = SU(r, vec2(sdEllipsoid(transpose(C) * (p - m), vec3(0.128, 0.15, 0.092) * s), SINGLET), 0.06 * s);
+    r = SU(r, vec2(sdEllipsoid(transpose(C) * (p - m), vec3(0.142 - 0.01 * fem, 0.15, 0.098) * s), SINGLET), 0.06 * s);
+    r = SU(r, vec2(sdEllipsoid(transpose(C) * (p - mix(J0, J1, 0.72)), vec3(0.146 - 0.012 * fem, 0.12, 0.1) * s), SINGLET), 0.06 * s);
     if (fem > 0.5) {
         r = SU(r, vec2(sdEllipsoid(q - vec3(0.052, -0.135, 0.085) * s, vec3(0.055, 0.05, 0.04) * s), SINGLET), 0.03 * s);
         r = SU(r, vec2(sdEllipsoid(q - vec3(-0.052, -0.135, 0.085) * s, vec3(0.055, 0.05, 0.04) * s), SINGLET), 0.03 * s);
@@ -136,8 +145,8 @@ vec2 mapRunner(vec3 p, int i) {
         r = SU(r, vec2(sdEllipsoid(q - vec3(-0.066, -0.095, 0.072) * s, vec3(0.074, 0.05, 0.042) * s), SINGLET), 0.03 * s);
     }
     float lw = 1.0 - 0.25 * fem;
-    r = SU(r, vec2(sdEllipsoid(q - vec3(0.105 * lw, -0.16, -0.02) * s, vec3(0.06 * lw, 0.12, 0.075) * s), SINGLET), 0.05 * s);
-    r = SU(r, vec2(sdEllipsoid(q - vec3(-0.105 * lw, -0.16, -0.02) * s, vec3(0.06 * lw, 0.12, 0.075) * s), SINGLET), 0.05 * s);
+    r = SU(r, vec2(sdEllipsoid(q - vec3(0.097 * lw, -0.16, -0.02) * s, vec3(0.055 * lw, 0.12, 0.075) * s), SINGLET), 0.05 * s);
+    r = SU(r, vec2(sdEllipsoid(q - vec3(-0.097 * lw, -0.16, -0.02) * s, vec3(0.055 * lw, 0.12, 0.075) * s), SINGLET), 0.05 * s);
     r = SU(r, vec2(sdEllipsoid(q - vec3(0.068, -0.085, -0.075) * s, vec3(0.06, 0.07, 0.035) * s), SINGLET), 0.04 * s);
     r = SU(r, vec2(sdEllipsoid(q - vec3(-0.068, -0.085, -0.075) * s, vec3(0.06, 0.07, 0.035) * s), SINGLET), 0.04 * s);
     vec3 qp = transpose(P) * (p - J0);

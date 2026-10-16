@@ -46,7 +46,7 @@ class Body:
         self.s, self.female, self.skin, self.hair, self.kit = s, female, skin, hair, kit
         self.thigh, self.shin, self.uarm, self.farm = 0.44 * s, 0.43 * s, 0.29 * s, 0.26 * s
         self.hipw = (0.095 if female else 0.088) * s
-        self.shw = (0.175 if female else 0.2) * s
+        self.shw = (0.165 if female else 0.185) * s
         self.spine = 0.5 * s
         self.stride, self.arm, self.acc = stride, arm, acc
 
