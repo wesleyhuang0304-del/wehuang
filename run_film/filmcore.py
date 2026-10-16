@@ -216,9 +216,8 @@ def cg_bg(cam, env, L=None, res=0.75):
 
 @functools.lru_cache(maxsize=2)
 def plate_img(name):
-    p = f'{PL}/{name}_2x.png'
-    if not os.path.exists(p):
-        p = f'{PL}/{name}.jpg' if os.path.exists(f'{PL}/{name}.jpg') else f'{A}/{name}_2x.png'
+    cands = [f'{PL}/{name}_2x.png', f'{PL}/{name}.jpg', f'{A}/{name}_2x.png', f'{A}/{name}.jpg']
+    p = next(c for c in cands if os.path.exists(c))
     img = cv2.imread(p)
     return cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
 
