@@ -194,11 +194,14 @@ def saw_voice(f, dur, cutoff=1200, detune=(-0.12, 0, 0.12), env_a=0.005, env_r=0
     return lp(x, cutoff) * env
 
 
-# chord roots for the bass, per bar
+# chord roots per bar (bar = 2 s); sections follow timeline.SECTIONS
 PROG = {}
-for b0, seq in [(3, ['D', 'Bb', 'F', 'C']), (7, ['D', 'Bb', 'F', 'C']), (11, ['Bb', 'C', 'D', 'D']),
-                (15, ['D', 'Bb', 'F', 'C']), (19, ['D', 'Bb', 'F', 'C', 'Bb', 'A']),
-                (25, ['Bb', 'C', 'D']), (28, ['D', 'D'])]:
+for b0, seq in [(0, ['D', 'D', 'D', 'D']),                          # intro 0-8
+                (4, ['Bb', 'C', 'D', 'D', 'Bb', 'C']),              # heritage 8-20
+                (10, ['D', 'Bb', 'F', 'C', 'A']),                   # city 20-30
+                (15, ['D', 'D', 'Bb', 'F', 'C', 'Bb', 'A']),        # drop 30-44
+                (22, ['D', 'Bb', 'F', 'C', 'A']),                   # chase 44-54
+                (27, ['DM', 'DM', 'DM'])]:                          # end card 54-60
     for k, r in enumerate(seq):
         PROG[b0 + k] = r
 CHORDS = {'D': ['D', 'F', 'A'], 'Bb': ['Bb', 'D', 'F'], 'F': ['F', 'A', 'C'], 'C': ['C', 'E', 'G'],
@@ -228,36 +231,68 @@ def build_drums():
             kickb.add(bar(b, q), KB if (big and q == 0) else K, 1.0)
             kicks.append(bar(b, q))
 
-    # intro: heartbeat accelerating 60 -> ~110 bpm, ticks from bar 1
+    def roll(t0, t1, g0=0.35, g1=0.9):
+        t = t0
+        while t < t1 - 0.03:
+            u = (t - t0) / (t1 - t0)
+            snb.add(t, S, g0 + (g1 - g0) * u)
+            t += BEAT / (2 if u < 0.3 else 4 if u < 0.65 else 8)
+
+    def fill(b, gain=0.7):
+        for k in range(8):
+            perc.add(bar(b, 2 + k * 0.25), tom([200, 170, 140, 115, 200, 170, 140, 115][k]), gain)
+
+    # intro 0-8: accelerating heartbeat, clock ticks, reverse swell + riser into the 8.0 impact
     for t in heartbeats():
         low.add(t, heartbeat(), 0.85)
         kicks.append(t)
-    for e in range(4, 24):
-        hatR.add(e * BEAT / 2, tick(), 0.5 + 0.5 * (e % 2 == 0))
-    fx.add(6.0 - 3.0, reverse_swell(3.0), 0.55)
-    fx.add(6.0 - 3.0, riser(3.0, 200, 6000), 0.35)
+    for e in range(8, 31):
+        hatR.add(e * BEAT / 2, tick(), 0.45 + 0.4 * (e % 2 == 0))
+    fx.add(5.0, reverse_swell(3.0), 0.55)
+    fx.add(5.0, riser(3.0, 200, 6000), 0.35)
 
-    # build bars 3-6: half-time kick, toms, accelerating snare roll, riser, gap
-    for b in range(3, 7):
+    # heritage 8-20: taiko ensemble, shaker, light kick; ECG heartbeat accents bar 6; build bars 8-9
+    for b in range(4, 10):
+        for q in (0, 2.5):
+            kickb.add(bar(b, q), K, 0.8)
+            kicks.append(bar(b, q))
+        if b >= 5:
+            clapb.add(bar(b, 1), C, 0.5)
+            clapb.add(bar(b, 3), C, 0.5)
+        for e in range(8):
+            perc.add(bar(b, e / 2 + 0.25), SH, 0.8)
+        for q in (0, 0.75, 1.5):
+            perc.add(bar(b, q), taiko(0.85), 0.7)
+    for k in range(40):  # 1906 -> 2026 counter
+        hatR.add(8.05 + k * 0.039, tick(), 0.55)
+    for q in (0, 1, 2, 3):
+        low.add(bar(6, q), heartbeat(), 0.75)
+    for k, tm in enumerate([16.0, 16.5, 17.0, 17.5]):
+        perc.add(tm, taiko(1.1 - 0.05 * k), 0.85)
+    for e in range(8):
+        (hatL if e % 2 else hatR).add(bar(8, e / 2), HC, 0.4)
+        (hatL if e % 2 else hatR).add(bar(9, e / 2), HC, 0.5)
+    fill(9, 0.6)
+    roll(18.5, 19.95, 0.3, 0.8)
+    fx.add(17.0, riser(3.0, 250, 9000), 0.6)
+
+    # city 20-30: half-time groove, claps from bar 11, toms bar 13, roll + riser + gap into the drop
+    for b in range(10, 15):
         for q in (0, 2):
             kickb.add(bar(b, q), K, 0.95)
             kicks.append(bar(b, q))
         for e in range(8):
             (hatL if e % 2 else hatR).add(bar(b, e / 2), HC, 0.45 + 0.25 * (e % 2))
-        if b >= 4:
+        if b >= 11:
             clapb.add(bar(b, 1), C, 0.6)
             clapb.add(bar(b, 3), C, 0.6)
-    for k, p in enumerate([180, 150, 120, 95, 180, 150, 120, 95]):
-        perc.add(bar(5, 2 + k * 0.25), tom(p), 0.8)
-    # snare roll 12.0 -> 13.75 accelerating 8ths -> 32nds
-    t = 12.0
-    while t < 13.72:
-        u = (t - 12.0) / 1.75
-        snb.add(t, S, 0.35 + 0.55 * u)
-        t += BEAT / (2 if u < 0.25 else 4 if u < 0.6 else 8)
-    fx.add(10.0, riser(3.75, 250, 11000), 0.75)
+    fill(13, 0.8)
+    roll(28.0, 29.75, 0.35, 0.9)
+    for k in range(40):  # 0 -> 42.195 counter
+        hatR.add(28.6 + k * 0.025, tick(), 0.5)
+    fx.add(26.0, riser(3.75, 250, 11000), 0.75)
 
-    # drop 1 bars 7-10, drop 2 bars 19-24 (bigger)
+    # drop 30-44: four-on-the-floor, taiko, end fill + roll + gap
     def groove(b0, b1, heavy):
         for b in range(b0, b1):
             K4(b, big=(b == b0) or heavy and (b - b0) % 2 == 0)
@@ -273,62 +308,25 @@ def build_drums():
                     (hatL if s16 % 2 else hatR).add(bar(b, q), HC, 0.32 + 0.22 * (s16 % 4 == 0))
             for q in (0, 1.5, 2.5) if heavy else (0, 2.5):
                 perc.add(bar(b, q), taiko(1.0 if q == 0 else 1.25), 0.75)
-        # end-of-section fill
-        for k in range(8):
-            perc.add(bar(b1 - 1, 2 + k * 0.25), tom([200, 170, 140, 115, 200, 170, 140, 115][k]), 0.7)
 
-    groove(7, 11, False)
-    groove(19, 25, True)
+    groove(15, 22, True)
+    fill(21, 0.7)
+    roll(43.0, 43.75, 0.5, 0.95)
+    fx.add(41.0, riser(2.75, 250, 12000), 0.75)
 
-    # heritage bars 11-14: lighter groove + taiko ensemble; motto hits 26.0-27.5
-    for b in range(11, 15):
-        for q in (0, 2.5):
-            kickb.add(bar(b, q), K, 0.85)
-            kicks.append(bar(b, q))
-        clapb.add(bar(b, 1), C, 0.55)
-        clapb.add(bar(b, 3), C, 0.55)
-        for e in range(8):
-            perc.add(bar(b, e / 2 + 0.25), SH, 0.8)
-        for q in (0, 0.75, 1.5):
-            perc.add(bar(b, q), taiko(0.85), 0.7)
-    for k, tm in enumerate([26.0, 26.5, 27.0, 27.5, 28.0, 29.0]):
-        perc.add(tm, taiko(1.1 - 0.05 * k), 0.9)
-    for k in range(40):  # 1906 -> 2026 counter ticks
-        hatR.add(22.1 + k * 0.045, tick(), 0.55)
+    # chase 44-54: anthem groove, tape-break crash, chant hits bar 26
+    groove(22, 26, True)
+    crash_t = 51.1
+    fx.add(crash_t, crash(2.4), 0.55)
+    for q in (0, 1, 2, 3):
+        kickb.add(bar(26, q), KB, 1.0)
+        kicks.append(bar(26, q))
+        clapb.add(bar(26, q), C, 1.0)
+        perc.add(bar(26, q), taiko(1.0), 0.9)
+    roll(53.0, 53.95, 0.5, 0.9)
+    fx.add(52.0, riser(2.0, 300, 9000), 0.55)
 
-    # breakdown bars 15-18: heartbeat, then kick 8ths -> 16ths, snare roll, riser, gap
-    for b in (15, 16):
-        for q in (0, 2):
-            low.add(bar(b, q), heartbeat(), 0.8)
-    for e in range(16):
-        kickb.add(bar(17, e / 2), K, 0.45 + 0.03 * e)
-        kicks.append(bar(17, e / 2))
-    t = 36.0
-    while t < 37.72:
-        u = (t - 36.0) / 1.75
-        snb.add(t, S, 0.4 + 0.55 * u)
-        t += BEAT / (2 if u < 0.3 else 4 if u < 0.65 else 8)
-    fx.add(34.0, riser(3.75, 200, 12000), 0.8)
-
-    # finale bars 25-27: heavy half-time + chant pattern bar 27, then end hit
-    for b in range(25, 28):
-        for q in (0, 2):
-            kickb.add(bar(b, q), KB, 0.95)
-            kicks.append(bar(b, q))
-        snb.add(bar(b, 1), S, 0.6)
-        clapb.add(bar(b, 3), C, 0.9)
-        snb.add(bar(b, 3), S, 0.6)
-        for e in range(8):
-            (hatL if e % 2 else hatR).add(bar(b, e / 2), HO if e % 2 else HC, 0.35)
-        for q in (0, 1, 2, 3):
-            perc.add(bar(b, q), taiko(0.9), 0.65)
-    for q in (0, 1, 2, 3):  # chant hits 54.0..55.5
-        kickb.add(bar(27, q), KB, 1.0)
-        clapb.add(bar(27, q), C, 1.0)
-        perc.add(bar(27, q), taiko(1.0), 0.9)
-    fx.add(56.0 - 2.0, riser(2.0, 300, 9000), 0.55)
-
-    # impacts, crashes, sub drops on every big hit; whoosh into every cut
+    # impacts, crashes, sub drops on every big hit; whoosh into every other cut
     for tm in IMPACTS:
         low.add(tm, impact(), 1.0)
         low.add(tm, subdrop(), 0.7)
@@ -336,7 +334,7 @@ def build_drums():
         kicks.append(tm)
     for tm in CUTS[1:]:
         if tm not in IMPACTS:
-            fx.add(tm - 0.2, whoosh(0.4), 0.45 if tm < 38 else 0.55)
+            fx.add(tm - 0.2, whoosh(0.4), 0.45 if tm < 30 else 0.55)
     fx.add(58.0, crash(2.0), 0.35)
     return dict(kick=kickb, clap=clapb, snare=snb, hatL=hatL, hatR=hatR, perc=perc, fx=fx, low=low), kicks
 
@@ -344,36 +342,33 @@ def build_drums():
 def build_bass():
     b = Bus()
     for bi, root in PROG.items():
-        if bi < 3 or bi >= 28:
+        if bi < 4 or bi >= 27:
             continue
         f = hz(midi(root + '1'))
-        if 15 <= bi <= 16:
-            b.add(bar(bi), saw_voice(f, BAR - 0.05, 300, env_a=0.2, env_r=0.3), 0.55)
-            continue
-        if bi in (3, 4, 5, 6, 11, 12, 13, 14, 17, 25, 26, 27):
+        if bi < 15 or bi == 26:
             for e in range(8):
-                b.add(bar(bi, e / 2), saw_voice(f, BEAT / 2 * 0.85, 700), 0.6)
-        else:  # drops: rolling 16ths, offbeat octave
+                b.add(bar(bi, e / 2), saw_voice(f, BEAT / 2 * 0.85, 700), 0.5 if bi < 10 else 0.6)
+        else:  # drop + chase: rolling 16ths, offbeat octave
             for s in range(16):
                 ff = f * (2 if s % 4 == 2 else 1)
                 b.add(bar(bi, s / 4), saw_voice(ff, BEAT / 4 * 0.8, 1100), 0.62)
     sub = Bus()
     for bi, root in PROG.items():
-        if 3 <= bi < 28 and not 15 <= bi <= 16:
+        if 4 <= bi < 27:
             t = tt(BAR)
             f = hz(midi(root + '1'))
             sub.add(bar(bi), np.sin(2 * np.pi * f * t) * np.minimum(1, t / 0.01) * np.minimum(1, (BAR - t) / 0.02), 0.5)
     t = tt(4.0)
-    sub.add(56.0, np.sin(2 * np.pi * hz(midi('D1')) * t) * np.exp(-t / 1.8), 0.7)
+    sub.add(54.0, np.sin(2 * np.pi * hz(midi('D1')) * t) * np.exp(-t / 1.8), 0.7)
     return b, sub
 
 
 def build_lead():
-    """Supersaw stabs for the drops (sidechained hard)."""
+    """Supersaw stabs for drop and chase (sidechained hard)."""
     L = Bus()
-    for bi in list(range(7, 11)) + list(range(19, 25)):
+    for bi in range(15, 26):
         ch = CHORDS[PROG[bi]]
-        for e in (0, 1.5, 3, 4.5, 6) if bi >= 19 else (0, 1.5, 3, 6):
+        for e in (0, 1.5, 3, 4.5, 6) if bi >= 22 else (0, 1.5, 3, 6):
             for n in ch:
                 L.add(bar(bi, e / 2), saw_voice(hz(midi(n + '4')), BEAT * 0.35, 3200,
                                                 detune=(-0.18, -0.07, 0, 0.07, 0.18)), 0.18)
@@ -422,80 +417,88 @@ def chord_notes(root, octave, t, d, v, top=False):
 
 def orchestra():
     strings, ost, brass, choir, ethnic, piano, timp, hits = [], [], [], [], [], [], [], []
-    # intro pad (Dm), swelling
-    strings += [(0.2, 5.8, n, 55) for n in ('D3', 'A3', 'F4')]
-    # string ostinato 16ths: build, drop1, drop2
-    pat = [0, 2, 1, 2]
-    for bi in list(range(3, 11)) + list(range(19, 25)):
-        ch = CHORDS[PROG[bi]]
-        oct_ = 4 if bi >= 7 else 3
-        for s in range(16):
-            n = ch[pat[s % 4]] + str(oct_ + (s % 8 == 7))
-            ost.append((bar(bi, s / 4), BEAT / 4 * 0.8, n, 70 + 30 * (s % 4 == 0) + (15 if bi >= 19 else 0)))
-    # long strings under build / drops / heritage / finale
-    for bi in list(range(3, 15)) + list(range(19, 28)):
-        strings += chord_notes(PROG[bi], 3, bar(bi), BAR, 62 if bi < 7 else 75)
-    # brass stabs drop1, theme drop2
-    for bi in range(7, 11):
-        for e in (0, 1.5, 3, 6):
-            brass += chord_notes(PROG[bi], 4, bar(bi, e / 2), BEAT * 0.4, 112)
-        hits += [(bar(bi), 0.5, n, 120) for n in ('D4', 'A4', 'D5')]
-    theme = [  # (bar, beat, dur, note)
-        (19, 0, 1, 'D5'), (19, 1, .5, 'F5'), (19, 1.5, .5, 'G5'), (19, 2, 1.5, 'A5'), (19, 3.5, .5, 'C6'),
-        (20, 0, 1, 'A5'), (20, 1, .5, 'G5'), (20, 1.5, .5, 'F5'), (20, 2, 2, 'G5'),
-        (21, 0, 1, 'F5'), (21, 1, .5, 'G5'), (21, 1.5, .5, 'A5'), (21, 2, 1.5, 'C6'), (21, 3.5, .5, 'D6'),
-        (22, 0, 1, 'C6'), (22, 1, 1, 'A5'), (22, 2, 2, 'G5'),
-        (23, 0, 1, 'F5'), (23, 1, .5, 'G5'), (23, 1.5, .5, 'A5'), (23, 2, 2, 'D6'),
-        (24, 0, 1, 'C#6'), (24, 1, .5, 'A5'), (24, 1.5, .5, 'G5'), (24, 2, 2, 'A5'),
-    ]
-    for b_, q, d, n in theme:
-        brass.append((bar(b_, q), d * BEAT * 0.95, n, 118))
-        brass.append((bar(b_, q), d * BEAT * 0.95, midi(n) - 12, 110))
-    for bi in range(19, 25):
-        choir += chord_notes(PROG[bi], 4, bar(bi), BAR, 80)
-    # heritage: shakuhachi/flute pentatonic melody + koto arpeggios
-    mel = [(11, 0, 1, 'D5'), (11, 1, .5, 'F5'), (11, 1.5, .5, 'G5'), (11, 2, 2, 'A5'),
-           (12, 0, 1, 'G5'), (12, 1, .5, 'A5'), (12, 1.5, .5, 'C6'), (12, 2, 2, 'D6'),
-           (13, 0, .5, 'C6'), (13, .5, .5, 'A5'), (13, 1, 1, 'G5'), (13, 2, .5, 'F5'), (13, 2.5, .5, 'G5'),
-           (13, 3, 1, 'A5'), (14, 0, 3.5, 'D5')]
+    # intro 0-8: swelling Dm pad + sparse piano
+    strings += [(0.2, 7.6, n, 55) for n in ('D3', 'A3', 'F4')]
+    for bi in range(0, 4):
+        for e in range(8):
+            piano.append((bar(bi, e / 2), BEAT * 1.5, ['D', 'A', 'F', 'A'][e % 4] + str(3 + (e % 4 == 2)),
+                          50 + 6 * bi + 8 * (e == 0)))
+    for b_, q, d, n in [(1, 0, 2, 'A5'), (1, 2, 2, 'F5'), (2, 0, 2, 'D5'), (2, 2, 2, 'F5'),
+                        (3, 0, 1, 'E5'), (3, 1, 1, 'F5'), (3, 2, 1.8, 'A5')]:
+        piano.append((bar(b_, q), d * BEAT, n, 84))
+
+    # heritage 8-20: flute pentatonic melody + koto arpeggios over long strings
+    mel = [(4, 0, 1, 'D5'), (4, 1, .5, 'F5'), (4, 1.5, .5, 'G5'), (4, 2, 2, 'A5'),
+           (5, 0, 1, 'G5'), (5, 1, .5, 'A5'), (5, 1.5, .5, 'C6'), (5, 2, 2, 'D6'),
+           (6, 0, .5, 'C6'), (6, .5, .5, 'A5'), (6, 1, 1, 'G5'), (6, 2, .5, 'F5'), (6, 2.5, .5, 'G5'),
+           (6, 3, 1, 'A5'), (7, 0, 3.5, 'D5'),
+           (8, 0, 1, 'F5'), (8, 1, 1, 'G5'), (8, 2, 2, 'A5'),
+           (9, 0, 1, 'C6'), (9, 1, 1, 'D6'), (9, 2, 1.5, 'G5')]
     for b_, q, d, n in mel:
         ethnic.append((bar(b_, q), d * BEAT, n, 105))
     koto = []
-    for bi in range(11, 15):
+    for bi in range(4, 10):
         ch = CHORDS[PROG[bi]]
         for e in range(8):
             koto.append((bar(bi, e / 2), BEAT, ch[[0, 1, 2, 1][e % 4]] + str(4 + (e % 4 == 2)), 90))
-    # breakdown: piano arpeggios + simple motif, pad strings
-    for bi in range(15, 19):
+
+    # string ostinato 16ths: city (low), drop and chase (high)
+    pat = [0, 2, 1, 2]
+    for bi in range(10, 26):
         ch = CHORDS[PROG[bi]]
-        for e in range(8):
-            piano.append((bar(bi, e / 2), BEAT * 1.5, ch[[0, 2, 1, 2][e % 4]] + str(3 + (e % 4 == 3)), 70 + 10 * (e == 0)))
-        strings += chord_notes(PROG[bi], 3, bar(bi), BAR, 60)
-    for b_, q, d, n in [(15, 0, 2, 'A5'), (15, 2, 2, 'F5'), (16, 0, 2, 'D5'), (16, 2, 2, 'F5'),
-                        (17, 0, 1, 'C6'), (17, 1, 1, 'A5'), (17, 2, 2, 'G5'), (18, 0, 3.5, 'A5')]:
-        piano.append((bar(b_, q), d * BEAT, n, 92))
-    # finale: big brass + choir chords, end D major
-    for bi in (25, 26, 27):
-        brass += chord_notes(PROG[bi], 4, bar(bi), BAR * 0.98, 115, top=True)
-        brass += [(bar(bi), BAR * 0.98, CHORDS[PROG[bi]][0] + '2', 110)]
-        choir += chord_notes(PROG[bi], 4, bar(bi), BAR, 100, top=True)
+        oct_ = 3 if bi < 15 else 4
+        for s in range(16):
+            n = ch[pat[s % 4]] + str(oct_ + (s % 8 == 7))
+            ost.append((bar(bi, s / 4), BEAT / 4 * 0.8, n, 70 + 30 * (s % 4 == 0) + (15 if bi >= 22 else 0)))
+    for bi in range(4, 27):
+        strings += chord_notes(PROG[bi], 3, bar(bi), BAR, 62 if bi < 10 else 75)
+
+    # drop 30-44: stabs on the first bar, then the brass theme + choir over bars 16-21
+    for e in (0, 1.5, 3, 6):
+        brass += chord_notes(PROG[15], 4, bar(15, e / 2), BEAT * 0.4, 112)
+    hits += [(bar(15), 0.5, n, 120) for n in ('D4', 'A4', 'D5')]
+    theme = [  # (bar offset, beat, dur, note) over D Bb F C Bb A
+        (0, 0, 1, 'D5'), (0, 1, .5, 'F5'), (0, 1.5, .5, 'G5'), (0, 2, 1.5, 'A5'), (0, 3.5, .5, 'C6'),
+        (1, 0, 1, 'A5'), (1, 1, .5, 'G5'), (1, 1.5, .5, 'F5'), (1, 2, 2, 'G5'),
+        (2, 0, 1, 'F5'), (2, 1, .5, 'G5'), (2, 1.5, .5, 'A5'), (2, 2, 1.5, 'C6'), (2, 3.5, .5, 'D6'),
+        (3, 0, 1, 'C6'), (3, 1, 1, 'A5'), (3, 2, 2, 'G5'),
+        (4, 0, 1, 'F5'), (4, 1, .5, 'G5'), (4, 1.5, .5, 'A5'), (4, 2, 2, 'D6'),
+        (5, 0, 1, 'C#6'), (5, 1, .5, 'A5'), (5, 1.5, .5, 'G5'), (5, 2, 2, 'A5'),
+    ]
+    for b_, q, d, n in theme:
+        brass.append((bar(16 + b_, q), d * BEAT * 0.95, n, 118))
+        brass.append((bar(16 + b_, q), d * BEAT * 0.95, midi(n) - 12, 110))
+    for bi in range(16, 22):
+        choir += chord_notes(PROG[bi], 4, bar(bi), BAR, 80)
+
+    # chase 44-54: theme reprise (first four bars, over D Bb F C) a step brighter, then the big A chord
+    for b_, q, d, n in theme:
+        if b_ < 4:
+            brass.append((bar(22 + b_, q), d * BEAT * 0.95, n, 122))
+            brass.append((bar(22 + b_, q), d * BEAT * 0.95, midi(n) - 12, 116))
+            brass.append((bar(22 + b_, q), d * BEAT * 0.95, midi(n) - 24, 100))
+    for bi in range(22, 26):
+        choir += chord_notes(PROG[bi], 4, bar(bi), BAR, 92, top=True)
+    brass += chord_notes('A', 4, bar(26), BAR * 0.98, 115, top=True) + [(bar(26), BAR * 0.98, 'A2', 110)]
+    choir += chord_notes('A', 4, bar(26), BAR, 100, top=True)
     for q in (0, 1, 2, 3):
-        hits += [(bar(27, q), 0.4, n, 125) for n in ('D4', 'A4', 'D5')]
-    brass += chord_notes('DM', 4, 56.0, 3.6, 120, top=True) + [(56.0, 3.6, 'D2', 115), (56.0, 3.6, 'D3', 115)]
-    choir += chord_notes('DM', 4, 56.0, 3.8, 110, top=True)
-    strings += chord_notes('DM', 3, 56.0, 3.9, 100, top=True) + chord_notes('DM', 5, 56.0, 3.9, 85)
-    hits += [(tm, 0.6, n, 127) for tm in (14.0, 38.0, 50.0, 56.0) for n in ('D3', 'D4', 'A4')]
-    # timpani rolls into drops, hits on impacts
-    for t0, t1 in ((12.0, 13.7), (36.0, 37.7), (48.0, 49.9)):
+        hits += [(bar(26, q), 0.4, n, 125) for n in ('A3', 'E4', 'A4')]
+
+    # end card 54-60: D major resolution
+    brass += chord_notes('DM', 4, 54.0, 3.6, 120, top=True) + [(54.0, 3.6, 'D2', 115), (54.0, 3.6, 'D3', 115)]
+    choir += chord_notes('DM', 4, 54.0, 3.8, 110, top=True)
+    strings += chord_notes('DM', 3, 54.0, 3.9, 100, top=True) + chord_notes('DM', 5, 54.0, 3.9, 85)
+    hits += [(tm, 0.6, n, 127) for tm in IMPACTS[1:] for n in ('D3', 'D4', 'A4')]
+    # timpani rolls into each section change, hits on impacts
+    for t0, t1 in ((18.2, 19.9), (28.0, 29.7), (42.0, 43.7), (52.0, 53.9)):
         t = t0
         while t < t1:
-            timp.append((t, 0.1, 'D2', int(60 + 60 * (t - t0) / (t1 - t0))))
+            timp.append((t, 0.1, 'D2' if t0 != 52.0 else 'A2', int(60 + 60 * (t - t0) / (t1 - t0))))
             t += 0.0625
     for tm in IMPACTS:
         timp.append((tm, 1.0, 'D2', 127))
         timp.append((tm, 1.0, 'A2', 120))
-    for t, _, _, _ in [(x, 0, 0, 0) for x in (50.0, 52.0, 54.0)]:
-        timp.append((t, 0.8, 'D2', 120))
+    timp.append((51.1, 0.8, 'D2', 120))
 
     stems = {
         'strings': render_midi('st_strings', [(48, 0, strings), (49, 1, [(t, d, n, v * 0.8) for t, d, n, v in strings])]),
@@ -567,16 +570,16 @@ def main():
         mix += x * w[k] * g * 1.6
     # crowd roar under drop 2 and the finale
     cr = np.zeros(N)
-    c = crowd(bar(28) - bar(19) + 2)
-    i0 = int(bar(19) * SR)
+    c = crowd(bar(27) - bar(15) + 2)
+    i0 = int(bar(15) * SR)
     env = np.ones(len(c))
     env[:int(SR)] = np.linspace(0, 1, int(SR))
     env[-int(2 * SR):] = np.linspace(1, 0, int(2 * SR))
     cr[i0:i0 + len(c)] = c[:N - i0] * env[:N - i0]
     mix += np.stack([cr, np.roll(cr, int(0.02 * SR))], 1) * 0.5
     auto = np.interp(np.arange(N) / SR,
-                     [0, 5.9, 6.0, 13.7, 14.0, 21.9, 22.0, 29.9, 30.0, 37.7, 38.0, 49.9, 50.0, 56.0, 60.0],
-                     [0.75, 0.8, 0.62, 0.86, 1.0, 1.0, 0.82, 0.86, 0.9, 0.9, 1.0, 1.0, 1.0, 1.0, 1.0])
+                     [0, 7.9, 8.0, 19.9, 20.0, 29.7, 30.0, 54.0, 60.0],
+                     [0.75, 0.8, 0.82, 0.86, 0.86, 0.9, 1.0, 1.0, 1.0])
     mix *= (gate * auto)[:, None]
     # end fade
     fe = int(59.0 * SR)
