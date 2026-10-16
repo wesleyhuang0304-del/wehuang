@@ -147,26 +147,47 @@ def _cycle_tables(key):
         bump[i0:i1] = 4 * u * (1 - u) * 0.045 * body.s
     y = yk + bump
     y = np.convolve(np.r_[y[-6:], y, y[:6]], np.ones(5) / 5, 'same')[6:-6]
-    # speed: stance foot backwards displacement per unit phase
-    def ankz(p, ia):
-        J, _ = _pose_local(body, p)
-        return J[ia][2]
-    dz = ankz(0.0, 16) - ankz(0.3, 16)
-    dz2 = ankz(0.5, 12) - ankz(0.8, 12)
-    v_per_phase = (dz + dz2) / 2 / 0.3   # metres per unit phase
-    return y, v_per_phase
+    # forward travel: while a foot is in stance, the pelvis advances exactly as fast as the sole point
+    # touching the ground (heel or toe) moves backwards, so that point stays fixed in the world
+    soles = np.array([_sole_ends(body, _pose_local(body, p)[0]) for p in np.r_[ph, 1.0]])  # (n+1, foot, end, 3)
+    inc = np.full((n, 2), np.nan)  # (lateral x, forward z) per sample
+    for i in range(n):
+        f = 0 if stance_r[i] else 1 if stance_l[i] else -1
+        if f >= 0:
+            e = int(np.argmin(soles[i, f, :, 1]))
+            inc[i] = soles[i, f, e, [0, 2]] - soles[i + 1, f, e, [0, 2]]
+    fl = np.isnan(inc[:, 0])
+    inc[fl, 1] = np.nanmean(inc[:, 1])
+    inc[fl, 0] = -np.nansum(inc[:, 0]) / fl.sum()   # sway nets to zero over a cycle
+    cum = np.r_[np.zeros((1, 2)), np.cumsum(inc, 0)]
+    cum[:, 0] -= cum[:, 0].mean()
+    return y, cum
+
+
+def _sole_ends(body, J):
+    """Heel and toe contact points of both feet (right, left) in pelvis space."""
+    out = []
+    for ia, it in ((16, 17), (12, 13)):
+        a, t = J[ia], J[it]
+        fd = (t - a) / (np.linalg.norm(t - a) + 1e-9)
+        out.append([a - fd * 0.06 * body.s + np.array([0, -0.055 * body.s, 0]),
+                    t + np.array([0, -0.025 * body.s, 0])])
+    return out
 
 
 def pose_world(body, t, freq=1.45, origin=(0, 0, 0), heading=0.0, phase0=0.0, timescale=1.0):
     """Joint positions in world space. The runner advances along its heading so the stance foot stays planted."""
     key = (body.s * 1.75, body.female, body.skin, body.hair, body.kit, body.stride, body.arm)
-    ytab, vpp = _cycle_tables(key)
-    phase = (phase0 + t * freq * timescale) % 1.0
+    ytab, cum = _cycle_tables(key)
+    cyc = phase0 + t * freq * timescale
+    phase = cyc % 1.0
     J, frames = _pose_local(body, phase)
-    y = ytab[int(phase * len(ytab)) % len(ytab)]
-    dist = (phase0 + t * freq * timescale) * vpp
+    n = len(ytab)
+    y = np.interp(phase * n, np.arange(n + 1), np.r_[ytab, ytab[0]])
+    dist = math.floor(cyc) * cum[-1, 1] + np.interp(phase * n, np.arange(n + 1), cum[:, 1])
+    sway = np.interp(phase * n, np.arange(n + 1), cum[:, 0])
     R = _ry(heading)
-    off = np.array(origin, float) + R @ np.array([0, y, dist])
+    off = np.array(origin, float) + R @ np.array([sway, y, dist])
     Jw = (R @ J.T).T + off
     Fw = np.stack([R @ f for f in frames])
     return Jw, Fw, phase
@@ -174,7 +195,7 @@ def pose_world(body, t, freq=1.45, origin=(0, 0, 0), heading=0.0, phase0=0.0, ti
 
 def speed(body, freq=1.45):
     key = (body.s * 1.75, body.female, body.skin, body.hair, body.kit, body.stride, body.arm)
-    return _cycle_tables(key)[1] * freq
+    return _cycle_tables(key)[1][-1, 1] * freq
 
 
 # ----------------------------------------------------------------------------- GPU renderer

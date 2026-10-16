@@ -29,7 +29,7 @@ def track_cam(run, off, look=(0, 0, 0), fov=35.0, roll=0.0):
     look = np.asarray(look, float)
 
     def f(tw):
-        p = run.pelvis(tw).copy()
+        p = run.track(tw)
         p[1] = 0.95 * run.body.s
         o = off(tw) if callable(off) else off
         return WD.Cam(p + o, p + look, fov, roll)

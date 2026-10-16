@@ -68,6 +68,11 @@ class Run:
     def pelvis(self, tw):
         return self.pose(tw)[0][0]
 
+    def track(self, tw):
+        """Pelvis position advanced at the mean running speed (no per-stride surge), for tracking cameras."""
+        d = (self.phase + tw * self.freq) * RN.speed(self.body, 1.0)
+        return np.array([self.x + d * math.sin(self.heading), 0.0, self.z + d * math.cos(self.heading)])
+
 
 def B(h=1.75, f=False, skin=0, kit=0, acc=0, stride=1.0, arm=1.0):
     return RN.Body(h, female=f, skin=skin, kit=kit, acc=acc, stride=stride, arm=arm)
