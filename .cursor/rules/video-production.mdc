@@ -1,0 +1,12 @@
+---
+description: Hard rules for every video produced in this repository
+alwaysApply: true
+---
+
+# Video production rules
+
+- Never show the same picture twice in one video. Every shot must have its own background plate or scene, its own camera angle and framing, and its own subject action. Re-cropping, re-zooming, mirroring or re-grading an earlier shot still counts as a repeat. Before rendering, check the shot list and fail the build if any plate or scene id is used by more than one shot.
+- People must never be static. Do not animate still photos of people with zoom/pan; the user rejects that.
+- Draw people with code (procedural 3D/2D rendering): anatomically proportioned bodies that read clearly as real humans, never stick figures, dots or abstract lines. Silhouettes and stylized lighting are fine; the body, limbs, head and clothing must be recognizable.
+- People keep moving for the whole time they are on screen (for running videos: a real run cycle with arm swing, knee drive, bounce and ground contact).
+- AI-generated images may be used for scenery only, with no people in them.
