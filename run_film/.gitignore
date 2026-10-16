@@ -1,0 +1,10 @@
+__pycache__/
+assets/*_2x.png
+assets/v2/*_2x.png
+out/
+music/*.wav
+fonts/*.woff2
+fonts/s.zip
+assets/EDSR_x2.pb
+assets/*.pb
+music/*.mid
